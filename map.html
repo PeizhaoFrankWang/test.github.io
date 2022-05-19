@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+<script src='https://api.mapbox.com/mapbox-gl-js/v2.8.2/mapbox-gl.js'></script>
+<link href='https://api.mapbox.com/mapbox-gl-js/v2.8.2/mapbox-gl.css' rel='stylesheet' />
+<script crossorigin="anonymous" integrity="sha512-1ktr2kdJH3RNHnxw1UMGhmCIdpJwaZe0UIeT5i3tlwYifbAADW8PJDaBZtDLBz7Xsd0LYyaQGbjNe0g2n3JEbg==" src="https://lib.baomitu.com/echarts/5.3.2-rc.1/echarts.common.js"></script>
+
+<style>
+    body { margin: 0; padding: 0; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%;height: 100% }
+    #main {
+        position: absolute;
+        bottom: 20px;
+        right: 15px;
+        z-index: 1;
+        background: #e7e7e7e0;
+        visibility: hidden;
+        padding: 10px;
+        width: 440px
+    }
+
+    #box {
+        position: absolute;
+        top: 20px;
+        left: 15px;
+        z-index: 1;
+        background: #e7e7e7e0;
+        visibility: hidden;
+        padding: 10px;
+        width: 400px
+    }
+
+
+    .text{
+        padding: 10px;
+    }
+</style>
+<head>
+    <meta charset="UTF-8">
+    <title>changes in gdp</title>
+    
+</head>
+
+
+
+<body>
+  <h1 style="color: #ffffff;position: absolute;left: 50px;z-index: 2;font-weight: bolder;font-size: 25px">Changes in GDP per capita caused by the epidemic</h1>
+  <h6 style="color: #ffffff;position: absolute;left: 50px;z-index: 2;font-weight: bolder;font-size: 20px">Data source: kaggle</h6>
+
+<div style="position: absolute;right: 15px;top: 15px;z-index: 2;color: aliceblue;padding: 10px;background: #6495ed2e">
+<table >
+    <tr>
+        <td bgcolor="#eff3ff" height="5" width="10">&nbsp;</td>
+        <td>&nbsp;&nbsp;GDP per capita<10000$&nbsp;&nbsp;</td>
+    </tr>
+    <tr><td height="5"></td></tr>
+    <tr>
+        <td bgcolor="#c6dbef" height="15" width="25"">&nbsp;</td>
+        <td>&nbsp;&nbsp;10000$&lt;GDP per capita&lt;20000$&nbsp;&nbsp;</td> 
+    </tr>
+    <tr><td height="5"></td></tr>
+    <tr>
+        <td bgcolor="#9ecae1" height="15" width="25">&nbsp;</td>
+        <td>&nbsp;&nbsp;20000$&lt;GDP per capita&lt;30000$&nbsp;&nbsp;</td>
+    </tr>
+    <tr><td height="5"></td></tr>
+    <tr>
+        <td bgcolor="#6baed6" height="15" width="25">&nbsp;</td>
+        <td>&nbsp&nbsp;30000$&lt;GDP per capita&lt;40000$&nbsp;&nbsp;</td>
+    </tr>
+    <tr><td height="5"></td></tr>
+    <tr>
+        <td bgcolor="#3182bd" height="15" width="25">&nbsp;</td>
+        <td>&nbsp&nbsp;40000$&lt;GDP per capita&lt;50000$&nbsp;&nbsp;</td>
+    </tr>
+    <tr><td height="5"></td></tr>
+    <tr>
+        <td bgcolor="#08519c" height="15" width="25">&nbsp;</td>
+        <td>&nbsp&nbsp;60000$&lt;GDP per capita&nbsp;&nbsp;&nbsp;</td>
+    </tr>
+</table></div>
+<div id='map'></div>
+<div id="main">
+    <div id="chart"  style="width: 420px;height:280px;"></div>
+    <div class="text"><span id="spId"></span></div>
+
+
+
+
+
+
+
+</body>
+<script>
+  mapboxgl.accessToken = 'pk.eyJ1IjoibGl0aWFueGl1IiwiYSI6ImNsMHhlYjkwMDBxdjAzaWpuazJ0c3h3NzQifQ.RY5K1gcR7MtjNL9B8eA1pw';
+  const map = new mapboxgl.Map({
+    container: 'map', // container ID
+    style: 'mapbox://styles/mapbox/dark-v10', // style URL
+    center: [104,36], // starting position [lng, lat]
+    zoom: 1 // starting zoom
+  });
+  function dataJson(data) {
+    console.log(data);
+    map.on('load', function () {
+      map.addSource('data', {
+        'type': 'geojson',
+        'data': data,
+      });
+      map.addLayer({
+        id: 'points',
+        source: 'data',
+        type: 'circle',
+        paint: {
+          "circle-opacity": 0.8,
+          "circle-blur": 0.2,
+          'circle-color': [
+            'step',
+            ['get', '2021'],
+            '#eff3ff',
+            10000,
+            '#c6dbef',
+            20000,
+            '#9ecae1',
+            30000,
+            '#6baed6',
+            40000,
+            '#3182bd',
+            50000,
+            '#08519c'
+          ],
+          'circle-radius': [
+            'step',
+            ['get', '2021'],
+            5,
+            10000,
+            10,
+            20000,
+            15,
+            30000,
+            20,
+            40000,
+            25,
+            50000,
+            30
+          ]
+        }
+      });
+      map.on('click', function (e) {
+        document.getElementById("main").style.visibility="hidden";
+      })
+      map.on('click', 'points', function (e) {
+        var coordinates = e.features[0].geometry.coordinates.slice();
+        var feature = e.features[0];
+        console.log(e.features[0]);
+        map.setCenter(coordinates)
+        map.setZoom(2)
+        if (feature.properties.zidingyi) {
+          $("#spId").text(feature.properties.zidingyi);
+        }else{
+          $("#spId").text("");
+        }
+
+        loadChart([feature.properties[2018],feature.properties[2019],feature.properties[2020],feature.properties[2021]],feature.properties.国家)
+        document.getElementById("main").style.visibility="visible";
+      })
+    })
+  }
+  // document.getElementById("demo").style.visibility="hidden";//隐藏
+  // document.getElementById("demo").style.visibility="visible";//显示
+  function loadChart(data,title) {
+    // 基于准备好的dom，初始化echarts实例
+    var myChart = echarts.init(document.getElementById('chart'));
+
+    // 指定图表的配置项和数据
+    var option = {
+      color: ['#80FFA5', '#00DDFF', '#37A2FF', '#FF0087', '#FFBF00'],
+      title: {
+        text: title,
+        left: 'center',
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross',
+          label: {
+            backgroundColor: '#6a7985'
+          }
+        }
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
+      },
+      xAxis: [
+        {
+          type: 'category',
+          boundaryGap: false,
+          data: ['2018', '2019', '2020', '2021']
+        }
+      ],
+      yAxis: [
+        {
+          name: 'GDP per capita / $',
+          type: 'value'
+        }
+      ],
+      series: [
+        {
+          name: 'GDP per capita',
+          type: 'line',
+          stack: 'Total',
+          smooth: true,
+          lineStyle: {
+            width: 0
+          },
+          showSymbol: false,
+          areaStyle: {
+            opacity: 0.8,
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              {
+                offset: 0,
+                color: 'rgb(128, 255, 165)'
+              },
+              {
+                offset: 1,
+                color: 'rgb(1, 191, 236)'
+              }
+            ])
+          },
+          emphasis: {
+            focus: 'series'
+          },
+          data: data
+        }
+      ]
+    };
+
+    // 使用刚指定的配置项和数据显示图表。
+    myChart.setOption(option);
+  }
+
+</script>
+<script type="text/javascript" src="./woreld.json?cb=dataJson"></script>
+
+</html>
